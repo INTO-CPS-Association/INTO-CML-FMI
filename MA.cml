@@ -1,0 +1,40 @@
+process MA = 
+begin
+
+values
+endtime : real = 10
+stepSize : real = 0.5
+state 
+de_fmu_level : real := 0.0
+de_fmu_valRef_set : valueReference := 2
+de_fmu_valRef_get : valueReference := 1
+de_fmu_valve : bool := false
+CCP : real := 0.0
+
+operations
+tempUpdateVariables: () ==> ()
+tempUpdateVariables() == 
+(
+	if de_fmu_valve then de_fmu_level := de_fmu_level - 0.4 else de_fmu_level := de_fmu_level + 0.4 
+)
+
+actions
+set_de_input = fmi2SetReal ! ID_wt_de ! de_fmu_valRef_set ! de_fmu_level ? st -> Skip
+get_de_output = fmi2GetBoolean ! ID_wt_de ! de_fmu_valRef_get ? x ? st -> de_fmu_valve := x
+dostep = fmi2DoStep ! ID_wt_de ! CCP ! stepSize ?  st -> Skip
+terminate = fmi2Terminate ! ID_wt_de -> Skip
+cycle = get_de_output; 
+	set_de_input; 
+	tempUpdateVariables(); 
+	if CCP + stepSize < endtime 
+	then 
+	(
+		dostep;
+		CCP:=CCP+stepSize;
+		cycle
+	) 
+	else Skip
+
+@ cycle
+
+end

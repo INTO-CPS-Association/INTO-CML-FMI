@@ -1,0 +1,9 @@
+types
+fmi2Component = token
+startTime = real
+stopTimeDefined = bool
+stopTime = real
+valueReference = int
+currentCommunicationPoint = real
+communicationStepSize = real
+fmi2Status = <fmi2OK> | <fmi2Warning> | <fmi2Discard> | <fmi2Error> | <fmi2Fatal>
