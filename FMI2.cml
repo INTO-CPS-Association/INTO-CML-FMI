@@ -11,7 +11,14 @@ begin
 @ b!8?v -> Skip
 end
 
-process FMIx = (FMU1 [|{b}|] FMU2)
+process FMU3 =
+begin
+@ b!8!5 -> Skip
+end
+
+process FMIx =FMU1 [|{b}|] (FMU2 [|{b}|] FMU3)
+
+
 
 
 
