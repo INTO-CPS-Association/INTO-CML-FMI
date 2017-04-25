@@ -1,0 +1,1 @@
+This branch focuses on using two channels for each FMI communication call. One for each direction
