@@ -1,0 +1,18 @@
+channels
+  b: nat * nat
+
+process FMU1 = 
+begin
+@ b?x!5 -> Skip
+end
+
+process FMU2 =
+begin
+@ b!8?v -> Skip
+end
+
+process FMIx = (FMU1 [|{b}|] FMU2)
+
+
+
+
