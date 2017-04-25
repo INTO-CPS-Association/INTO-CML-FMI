@@ -1,2 +1,0 @@
-process FMI = 
-	(MA [|wt_de_chansets|] wt_de) 
