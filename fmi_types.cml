@@ -6,4 +6,5 @@ stopTime = real
 valueReference = int
 currentCommunicationPoint = real
 communicationStepSize = real
+booleanReturn = bool * fmi2Status
 fmi2Status = <fmi2OK> | <fmi2Warning> | <fmi2Discard> | <fmi2Error> | <fmi2Fatal>

@@ -17,7 +17,9 @@ chansets
 		wt_de_setupExp union 
 		wt_de_enterInit union
 		wt_de_ExitInit union
-		wt_de_Terminate
+		wt_de_Terminate union
+		{|fmi2GetBooleanReturn|} union
+		{|fmi2StatusReturn|}
 
 process wt_de = 
 begin
@@ -25,13 +27,14 @@ begin
 values
 minLevel : real = 1.0
 maxLevel : real = 2.0
-period : real = 0.05
+period : real = 0.5
 
 state
 level : real := 0.0
 valve : bool := true
 doStepCalc : [DoStepCalculator] := nil 
 canBeInvoked2 : bool := true
+stopSim : bool := false
 
 operations
 initObject:() ==>()
@@ -46,34 +49,46 @@ canBeInvoked(ccp) == doStepCalc.canBeInvokedExt(ccp)
 
 actions
 	Initialization = doStepCalc := new DoStepCalculator(period)
-	SetReal = fmi2SetReal?x?y?z!(if y = 2 then <fmi2OK> else <fmi2Error>) -> if y = 2 then level := z else Skip
-	GetBoolean = fmi2GetBoolean . ID_wt_de ! valve ! <fmi2OK> ? x -> Skip
-	           [] fmi2GetBoolean . ID_wt_de ! false ! <fmi2Error> ? x -> Skip		
+	SetReal = 
+		fmi2SetReal ! ID_wt_de ? y ? z -> 
+			if y = 2 
+			then 
+			(
+				level := z;
+				fmi2StatusReturn!<fmi2OK> -> Skip
+			) 
+			else 
+				fmi2StatusReturn!<fmi2Error> -> Skip
+	GetBoolean = 
+		fmi2GetBoolean ! ID_wt_de ? valRef ->
+			if valRef = 1 
+			then 
+				fmi2GetBooleanReturn ! valve ! <fmi2OK> -> Skip
+		else
+			fmi2GetBooleanReturn ! false ! <fmi2Error> -> Skip
 	ControlLogic = count : int @  
 		if count > 0 
 		then 
 			if level > maxLevel
 			then
 				valve := true
-			elseif level < minLevel
-			then
+			else 
 				valve := false
-			else
-				Skip 
 		else Skip
-	DoStep = fmi2DoStep?x?ccp?ss!( 
-		let invokeOK = doStepCalc.canBeInvokedExt(ccp) in if invokeOK then <fmi2OK> else <fmi2Error>) 
-		->  if doStepCalc.canBeInvokedExt(ccp) 
-			then 
-			(
-				dcl doSteps : int @ doSteps := doStepCalc.CalcDoSteps(ccp,ss);
-				ControlLogic(doSteps)
-			)
-			else
-				Skip
-	StopSim = fmi2Terminate?x -> Stop
-	SimulationLoop = (StopSim [] GetBoolean); (SetReal [] StopSim); (StopSim [] DoStep); SimulationLoop
+	DoStep = fmi2DoStep ! ID_wt_de ? ccp ? ss ->
+		 if doStepCalc.canBeInvokedExt(ccp)
+		 then 
+		 (
+		 	dcl doSteps : int @ doSteps := doStepCalc.CalcDoSteps(ccp,ss);
+			ControlLogic(doSteps);
+		 	fmi2StatusReturn ! <fmi2OK> -> GetBoolean
+		 )
+		 else fmi2StatusReturn ! <fmi2Error> -> GetBoolean
+	Terminate = fmi2Terminate ! ID_wt_de -> Skip
 	
-@ SimulationLoop
+	// TODO: Should the FMU offer everything always?
+	SimulationLoop = (GetBoolean;SimulationLoop) [] (SetReal;SimulationLoop) [] (DoStep;SimulationLoop) [] (Terminate;Skip)
+	
+@ Initialization; SimulationLoop
 
 end

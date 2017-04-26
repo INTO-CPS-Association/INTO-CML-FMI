@@ -5,7 +5,6 @@ state
 currentCommunicationPoint : real := 0
 periodLength : real
 tillNextPeriod : real
---endTime : real := 0
 
 operations
 
@@ -24,15 +23,15 @@ CalcDoSteps(ccp, ss) ==
 	in
 	(	
 		currentCommunicationPoint := newCcp;
-		// 1+ steps
+		// At least 1 step
 		if diff >= tillNextPeriod
 		then 
 			let 
-				mk_(doSteps,tillNextPeriod') = CalcMultipleDoSteps(diff, tillNextPeriod, periodLength)
+				doStepTuple = CalcMultipleDoSteps(diff, tillNextPeriod, periodLength)
 			in 
 			(	
-				tillNextPeriod := tillNextPeriod';
-				return doSteps
+				tillNextPeriod := doStepTuple.#2;
+				return doStepTuple.#1
 			)
 		// No step, but still progress.
 		else
@@ -42,8 +41,6 @@ CalcDoSteps(ccp, ss) ==
 )
 pre canBeInvoked(currentCommunicationPoint, ccp)
 
---public setEndTime : real ==> ()
---setEndTime(endTime_) == endTime := endTime_
 
 public canBeInvokedExt: real ==> bool
 canBeInvokedExt(ccp) == canBeInvoked(currentCommunicationPoint, ccp)
@@ -59,8 +56,12 @@ private
 	CalcMultipleDoSteps : real * real * real -> (int * real)
 	CalcMultipleDoSteps(timeIncrease, tillNextPeriod, periodLength) == 
 		let remTimeAfterFirstPeriod = timeIncrease - tillNextPeriod,
-			doStepsReal = remTimeAfterFirstPeriod / periodLength
+			doStepsReal = remTimeAfterFirstPeriod / periodLength,
+			doStepsFloored = floor(doStepsReal)
 		in
-			mk_((floor doStepsReal)+1, periodLength - (doStepsReal mod periodLength))
+			mk_(
+				doStepsFloored+1, 
+				periodLength - (doStepsReal - doStepsFloored)
+			)
 			
 end

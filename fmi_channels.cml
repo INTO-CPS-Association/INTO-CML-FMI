@@ -3,12 +3,20 @@ channels
 -- 1.	Should the valueReference and values be arrays as in the FMI standard?!
 -- 		Makes it possible to return an empty array
 -- 2. Should I use union types for set and get instead of type specialized?
-fmi2SetReal : fmi2Component *  valueReference * int * fmi2Status
-fmi2SetBoolean : fmi2Component * valueReference * bool * fmi2Status
-fmi2GetReal : fmi2Component * valueReference * real * fmi2Status
-fmi2GetBoolean : fmi2Component * valueReference * bool * fmi2Status
+fmi2StatusReturn : fmi2Status
 
-fmi2DoStep : fmi2Component * currentCommunicationPoint * communicationStepSize * fmi2Status
+fmi2SetReal : fmi2Component *  valueReference * int
+
+fmi2SetBoolean : fmi2Component * valueReference * bool
+
+fmi2GetReal : fmi2Component * valueReference * real
+fmi2GetRealRet : real * fmi2Status
+
+fmi2GetBoolean : fmi2Component * valueReference
+fmi2GetBooleanReturn : bool * fmi2Status
+
+fmi2DoStep : fmi2Component * currentCommunicationPoint * communicationStepSize
+
 
 -- FMI state channels
 -- fmi2Instantiate is negligible. 

@@ -1,0 +1,30 @@
+class ModelDescription = 
+begin
+types 
+	public SVVariability = <continuous> | <discrete> 
+	public SVCausality = <input> | <output>
+	public SVType = int | real | bool
+	public SVType' = <integer> | <real> | <bool>
+
+	public ScalarVariable :: 
+		variability : SVVariability
+		causality : SVCausality
+		type : SVType
+		type' : SVType'
+		
+state
+	SVVariables : set of ScalarVariable := {} 
+		
+operations
+
+	public getOutputs: () ==> set of ScalarVariable
+	getOutputs() == return getSVCausality(SVVariables, <output>)
+	
+	public getInputs: () ==> set of ScalarVariable
+	getInputs() == return getSVCausality(SVVariables, <input>)
+
+functions
+	private getSVCausality : set of ScalarVariable * SVCausality -> set of ScalarVariable
+	getSVCausality(svs, causality) == {x | x in set svs @ x.causality = causality}
+
+end

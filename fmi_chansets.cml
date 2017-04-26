@@ -1,0 +1,10 @@
+chansets	
+	all_chansets = {|fmi2SetReal|} union
+		{|fmi2GetBoolean|} union 
+		{|fmi2DoStep|} union 
+		{|fmi2SetupExperiment|} union 
+		{|fmi2EnterInitializationMode|} union
+		{|fmi2ExitInitializatoinMode|} union
+		{|fmi2Terminate|} union
+		{|fmi2GetBooleanReturn|} union
+		{|fmi2StatusReturn|}

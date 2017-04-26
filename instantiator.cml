@@ -1,0 +1,12 @@
+class Instantiator = 
+begin
+
+operations
+	public instantiate : token ==> FMUInterface
+	instantiate(t) == 
+	(
+		dcl x : FMUInterface @ x := new de();
+		return x
+	)
+
+end

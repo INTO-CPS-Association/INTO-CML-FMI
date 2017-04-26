@@ -1,0 +1,62 @@
+class de extends FMUInterface = 
+begin
+
+values
+minLevel : real = 1.0
+maxLevel : real = 2.0
+period : real = 0.5
+
+state
+level : real := 0.0
+valve : bool := true
+doStepCalc : [DoStepCalculator] := nil 
+
+operations
+	public de:() ==> de
+	de () == 
+	(
+		doStepCalc := new DoStepCalculator(period)
+	)
+	
+	public setInputReal: valueReference * real ==> fmi2Status
+	setInputReal(vRef,v) == 
+		if vRef = 2 
+		then 
+		(
+			level := v;
+			return <fmi2OK>
+		) 
+		else 
+			return <fmi2Error>
+	
+	public getBoolean : valueReference ==> booleanReturn
+	getBoolean(vRef) == 			
+		if vRef = 1 
+		then 
+			return mk_(valve,<fmi2OK>)
+		else
+			return mk_(false,<fmi2Error>)
+	
+	public doStep : currentCommunicationPoint * communicationStepSize ==> fmi2Status
+	doStep(t, h) == 
+		if doStepCalc.canBeInvokedExt(t)
+		 then 
+		 (
+		 	let steps: int = doStepCalc.CalcDoSteps(t,h) in
+		 	(
+		 		controlLogic(steps);
+			 	return <fmi2OK>
+		 	)
+		 )
+		 else return <fmi2Error>
+	
+	private controlLogic: int ==> ()
+	controlLogic(steps) == 
+		for i = 1 to steps do
+			if level > maxLevel
+			then
+				valve := true
+			else 
+				valve := false
+
+end

@@ -1,2 +1,8 @@
 process FMI = 
 	(MA [|wt_de_chansets|] wt_de) 
+
+
+
+	
+process FMI2 = 
+	MA2(mk_token("de")) [|all_chansets|] fmu_proc(mk_token("de"))
