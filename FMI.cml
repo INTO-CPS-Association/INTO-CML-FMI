@@ -1,8 +1,34 @@
-process FMI = 
-	(MA [|wt_de_chansets|] wt_de) 
 
-
-
+values
+ 
 	
-process FMI2 = 
-	MA2(mk_token("de")) [|all_chansets|] fmu_proc(mk_token("de"))
+process FMI = 
+	MA(mk_token("de")) [|all_chansets|] fmu_proc(mk_token("de"))
+	
+values
+
+fmu1 : fmi2Component = mk_token("de")
+fmu2 : fmi2Component = mk_token("ct")
+
+
+connections : map ConVar to set of ConVar = 
+	{ 
+		mk_ConVar(fmu1, 1) |-> {mk_ConVar(fmu2, 1)}, 
+		mk_ConVar(fmu2, 2) |-> {mk_ConVar(fmu1, 2)}	
+	}
+	
+modelDescriptions : set of ModelDescription2 =
+	{
+		mk_ModelDescription2(fmu1,
+			{
+				mk_ScalarVariable(<output>,<bool>,1),
+				mk_ScalarVariable(<input>,<real>,2)
+			}),
+		mk_ModelDescription2(fmu2,
+			{
+				mk_ScalarVariable(<output>,<real>,2),
+				mk_ScalarVariable(<input>,<bool>,1)
+			})
+	}
+	
+	

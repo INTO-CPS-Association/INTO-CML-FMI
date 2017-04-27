@@ -1,10 +1,30 @@
 types
-fmi2Component = token
-startTime = real
-stopTimeDefined = bool
-stopTime = real
-valueReference = int
-currentCommunicationPoint = real
-communicationStepSize = real
-booleanReturn = bool * fmi2Status
-fmi2Status = <fmi2OK> | <fmi2Warning> | <fmi2Discard> | <fmi2Error> | <fmi2Fatal>
+	fmi2Component = token
+	startTime = real
+	stopTimeDefined = bool
+	stopTime = real
+	valueReference = int
+	currentCommunicationPoint = real
+	communicationStepSize = real
+	booleanReturn = bool * fmi2Status
+	realReturn = real * fmi2Status
+	-- Possible use a union type?
+	--svTypes = real | int | bool 
+	fmi2Status = <fmi2OK> | <fmi2Warning> | <fmi2Discard> | <fmi2Error> | <fmi2Fatal>
+
+	ConVar :: 
+		fmu : token
+		valRef : int
+	
+	SVVariability = <continuous> | <discrete> 
+	SVCausality = <input> | <output>
+	SVType = <integer> | <real> | <bool>
+	
+	ModelDescription2 ::
+		component : fmi2Component
+		svs : set of ScalarVariable
+	ScalarVariable :: 
+		--variability : SVVariability
+		causality : SVCausality
+		type : SVType
+		valueReference : valueReference

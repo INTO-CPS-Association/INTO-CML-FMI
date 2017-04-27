@@ -1,19 +1,9 @@
 class ModelDescription = 
 begin
-types 
-	public SVVariability = <continuous> | <discrete> 
-	public SVCausality = <input> | <output>
-	public SVType = int | real | bool
-	public SVType' = <integer> | <real> | <bool>
-
-	public ScalarVariable :: 
-		variability : SVVariability
-		causality : SVCausality
-		type : SVType
-		type' : SVType'
 		
 state
-	SVVariables : set of ScalarVariable := {} 
+	protected SVVariables : set of ScalarVariable := {}
+	protected component : fmi2Component 
 		
 operations
 

@@ -1,0 +1,14 @@
+class de_md extends ModelDescription = 
+begin
+operations
+	public de_md : fmi2Component ==> de_md
+	de_md(comp_) == 
+	(
+		component := comp_;
+		SVVariables := {
+			mk_ScalarVariable(<output>,<bool>,1),
+			mk_ScalarVariable(<input>,<real>,2)
+		}
+	)
+
+end

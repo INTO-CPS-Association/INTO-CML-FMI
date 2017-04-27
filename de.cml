@@ -1,15 +1,13 @@
 class de extends FMUInterface = 
 begin
 
-values
-minLevel : real = 1.0
-maxLevel : real = 2.0
-period : real = 0.5
-
 state
-level : real := 0.0
-valve : bool := true
-doStepCalc : [DoStepCalculator] := nil 
+	level : real := 0.0
+	valve : bool := true
+	doStepCalc : [DoStepCalculator] := nil 
+	period : real := 0.5
+	minLevel : real := 1.0
+	maxLevel : real := 2.0
 
 operations
 	public de:() ==> de
