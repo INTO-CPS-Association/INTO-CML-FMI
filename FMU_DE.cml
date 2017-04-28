@@ -8,14 +8,11 @@ state
 	period : real := 0.5
 	minLevel : real := 1.0
 	maxLevel : real := 2.0
-	io : [IO] := nil
 
 operations
 	public FMU_DE:() ==> FMU_DE
 	FMU_DE () == 
 	(
-		io := new IO();
-		let x = io.echo("ct - getReal") in
 		doStepCalc := new DoStepCalculator(period)
 	)	
 	

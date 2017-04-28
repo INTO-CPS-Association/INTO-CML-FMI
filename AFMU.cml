@@ -5,14 +5,10 @@ types
 	FMIState = <Instantiated> | <InitializationMode> | <SlaveInitialized>
 
 state
-	io : [IO] := nil
 	protected fmuState : [FMIState] := nil
 
 
-operations
-	public AFMU: () ==> AFMU
-	AFMU() == (io := new IO())
-	
+operations	
 	public getState : () ==> FMIState
 	getState() == return fmuState
 	
@@ -45,24 +41,24 @@ operations
 	)
 	
 	public setInputBoolean: valueReference * bool ==> fmi2Status
-	setInputBoolean(vRef,v) == let x = io.echo("FMUInterface") in return <fmi2Error>
+	setInputBoolean(vRef,v) == return <fmi2Error>
 	
 	public setInputReal: valueReference * real ==> fmi2Status
-	setInputReal(vRef,v) == let x = io.echo("FMUInterface") in return <fmi2Error>
+	setInputReal(vRef,v) == return <fmi2Error>
 	
 	public setInputInteger: valueReference * int ==> fmi2Status
-	setInputInteger(vRef,v) == let x = io.echo("FMUInterface") in return <fmi2Error>
+	setInputInteger(vRef,v) == return <fmi2Error>
 
 	public getReal : valueReference ==> (real * fmi2Status)
-	getReal(vRef) == let x = io.echo("FMUInterface") in return mk_(0.0, <fmi2Error>)
+	getReal(vRef) == return mk_(0.0, <fmi2Error>)
 	
 	public getBoolean : valueReference ==> booleanReturn
-	getBoolean(vRef) == let x = io.echo("FMUInterface") in return mk_(false, <fmi2Error>)
+	getBoolean(vRef) == return mk_(false, <fmi2Error>)
 	
 	public getInteger : valueReference ==> (int * fmi2Status)
-	getInteger(vRef) == let x = io.echo("FMUInterface") in return mk_(0, <fmi2Error>)
+	getInteger(vRef) == return mk_(0, <fmi2Error>)
 	
 	public doStep : currentCommunicationPoint * communicationStepSize ==> fmi2Status
-	doStep(t, h) == let x = io.echo("FMUInterface") in return <fmi2Error>
+	doStep(t, h) == return <fmi2Error>
 
 end

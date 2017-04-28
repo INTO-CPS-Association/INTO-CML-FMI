@@ -2,18 +2,16 @@ class FMU_CT extends AFMU =
 begin
 
 state
-valveControl : bool := false
-level : real := 0.0
-doStepCalc : [DoStepCalculator] := nil 
-period : real := 0.5
-io : [IO] := nil
+	valveControl : bool := false
+	level : real := 0.0
+	doStepCalc : [DoStepCalculator] := nil 
+	period : real := 0.5
 
 operations
 	public FMU_CT:() ==> FMU_CT
 	FMU_CT() == 
 	(
-		doStepCalc := new DoStepCalculator(period);
-		io := new IO()
+		doStepCalc := new DoStepCalculator(period)
 	)
 	
 	public setInputBoolean: valueReference * bool ==> fmi2Status
@@ -24,25 +22,15 @@ operations
 			valveControl := v;
 			return <fmi2OK>
 		) 
-		else 
-			return <fmi2Error>
+		else return <fmi2Error>
 	
 	public getReal : valueReference ==> realReturn
 	getReal(vRef) == 
-		(
-			let x = io.echo("ct - getReal0") in		
 			if vRef = 2 
-			then 
-			(
-				let x = io.echo("ct - getReal1") in
-					return mk_(level,<fmi2OK>)
-			)
-			else
-			(
-				let x = io.echo("ct - getReal2") in
-					return mk_(level,<fmi2Error>)
-			)
-		)
+			then return mk_(level,<fmi2OK>)			
+			else return mk_(level,<fmi2Error>)
+			
+		
 	
 	public doStep : currentCommunicationPoint * communicationStepSize ==> fmi2Status
 	doStep(t, h) == 
@@ -61,9 +49,7 @@ operations
 	controlLogic(steps) == 
 		for i = 1 to steps do
 			if valveControl
-			then 
-				level := level - 0.4 
-			else 
-				level := level + 0.4 
+			then level := level - 0.4 
+			else level := level + 0.4 
 
 end

@@ -16,14 +16,13 @@ state
 	endTime : EndTimeT := maInit.#2
 
 operations
-	update_out_val: fmi2Component * valueReference * svValue ==> ()
+	private update_out_val: fmi2Component * valueReference * svValue ==> ()
 	update_out_val(fmu,vRef,v) == 
-	(
 		let old_out : out_val_int = output_values(fmu),
 			new_out : out_val_int = old_out ++ {vRef |-> v}
 		in
 			output_values := output_values ++ {fmu |-> new_out}
-	)
+	
 	
 	get_out_val : ConVar ==> svValue
 	get_out_val(cVar) == return output_values(cVar.fmu)(cVar.vRef)
@@ -56,8 +55,6 @@ actions
 	set_inputs = 
 		for all output in set {x | x in set dom Setup.connections} do
 			for all cVar in set {x | x in set Setup.connections(output)} do
-				-- This only returns a set with 1 value, but it is not possible to define.
-				-- This gives us the scalar we need to set
 				let scalar = getScalar(cVar),
 					v = get_out_val(output) 
 				in
@@ -68,26 +65,32 @@ actions
 					end		
 	
 	set_input_real = comp_ : fmi2Component, vRef : valueReference, v : real @ 
-		fmi2SetReal ! comp_ ! vRef ! v -> set_input_status
+		fmi2SetReal ! comp_ ! vRef ! v -> status_return
+		
 	set_input_boolean = comp_ : fmi2Component, vRef : valueReference, v : bool @ 
-		fmi2SetBoolean ! comp_ ! vRef ! v -> set_input_status	
+		fmi2SetBoolean ! comp_ ! vRef ! v -> status_return
+		
 	set_input_integer = comp_ : fmi2Component, vRef : valueReference, v : int @
-		fmi2SetInteger ! comp_ ! vRef ! v -> set_input_status	
+		fmi2SetInteger ! comp_ ! vRef ! v -> status_return	
 	
-	set_input_status = fmi2StatusReturn ? s -> Skip
+	status_return = fmi2StatusReturn ? s -> Skip
 	
 	dostep = 
 		for all id in set ids do
-			fmi2DoStep ! id ! CCP ! stepSize -> doStepStatus
-		
-	doStepStatus = fmi2StatusReturn ? st -> Skip
+			fmi2DoStep ! id ! CCP ! stepSize -> status_return
 	
 	terminate = for all id in set ids do
 		(
 			fmi2Terminate ! id -> Skip
 		)
 	instantiate = for all id in set ids do
-		fmi2Instantiate ! id -> Skip
+		fmi2Instantiate ! id -> fmi2StatusReturn ? s -> Skip
+		
+	initialize = for all id in set ids do
+	(
+		fmi2EnterInitializationMode ! id -> status_return;
+			fmi2ExitInitializationMode ! id -> status_return
+	)
 		
 	cycle = 
 		if CCP + stepSize <= endTime 
@@ -101,6 +104,6 @@ actions
 		) 
 		else terminate
 	
-	@ instantiate; cycle
+	@ instantiate; initialize; cycle
 
 end

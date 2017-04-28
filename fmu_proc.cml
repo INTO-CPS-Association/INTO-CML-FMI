@@ -10,24 +10,16 @@ state
 	io : [IO] := nil
 	
 actions
--- NOTE: Pattern matching tuples does not work
+	-- NOTE: Pattern matching tuples does not work
 
 	ReturnStatus = s : fmi2Status @ fmi2StatusReturn ! s -> Skip
-
-	INIT = 
-	(
-		dcl x : Instantiator @ 
-		x := new Instantiator();
-		fmu := x.instantiate(id);
-		io := new IO()
-	)
 	
 	Instantiate = fmi2Instantiate ! id -> 
 	(
 		dcl x : Instantiator @ 
 		x := new Instantiator();
 		fmu := x.instantiate(id);
-		io := new IO()
+		ReturnStatus(<fmi2OK>)
 	)
 	
 	EnterInitMode = fmi2EnterInitializationMode ! id -> 
@@ -41,10 +33,8 @@ actions
 	SetReal = 
 		fmi2SetReal ! id ? x ? y -> 
 		(
-			io.echo("### fmu_proc SetReal ###");
 			let s = fmu.setInputReal(x,y) in
 			(
-				io.echo("### fmu_proc SetReal1 ###");
 				ReturnStatus(s)
 			)
 		)
@@ -52,51 +42,34 @@ actions
 	GetBoolean = 
 		fmi2GetBoolean ! id ? x ->
 		(
-		io.echo("### fmu_proc GetBoolean0 ###");
 			let r : booleanReturn = fmu.getBoolean(x) in
 			(
-				io.echo("### fmu_proc GetBoolean1 ###");
 				fmi2GetBooleanReturn ! (r.#1) ! (r.#2) -> Skip
 			)
 		)
 		
 	SetBoolean = 
-		fmi2SetBoolean ! id ? x ? y->
-		(
-		io.echo("### fmu_proc SetBoolean0 ###");
-			let s : fmi2Status = fmu.setInputBoolean(x,y) in
-			(
-				io.echo("### fmu_proc SetBoolean1 ###");
+		fmi2SetBoolean ! id ? x ? y ->		
+			let s : fmi2Status = fmu.setInputBoolean(x,y) in			
 				ReturnStatus(s)
-			)
-		)
+			
+		
 		
 	GetReal = 
-		fmi2GetReal ! id ? x ->
-		(
-			io.echo("### fmu_proc GetReal0 ###");
-			let r : realReturn = fmu.getReal(x) in
-			(
-				io.echo("### fmu_proc GetReal1 ###");
+		fmi2GetReal ! id ? x ->		
+			let r : realReturn = fmu.getReal(x) in			
 				fmi2GetRealReturn ! (r.#1) ! (r.#2) -> Skip
-			)
-		)
+			
+		
 	DoStep = 
-		fmi2DoStep ! id ? ccp ? ss ->
-		(
-			let s : fmi2Status = fmu.doStep(ccp, ss) in
-			(
-				ReturnStatus(s)
-			)
-		)
-
+		fmi2DoStep ! id ? ccp ? ss ->		
+			let s : fmi2Status = fmu.doStep(ccp, ss) in			
+				ReturnStatus(s)		
+		
 	Terminate = fmi2Terminate ! id -> Skip
 	
-	SimulationLoop = 
+	SimulationLoop = (SetBoolean [] GetBoolean [] GetReal [] SetReal [] DoStep);SimulationLoop [] Terminate
 	
-	(SetBoolean [] GetBoolean [] GetReal [] SetReal [] DoStep);SimulationLoop [] (Terminate;Skip)
-	--(SetBoolean;SimulationLoop) [] (GetBoolean;SimulationLoop) [] (GetReal;SimulationLoop) [] (SetReal;SimulationLoop) [] (DoStep;SimulationLoop) [] (Terminate;Skip)
-	
-@ Instantiate; SimulationLoop
+@ Instantiate; (Terminate [] EnterInitMode);(Terminate [] ExitInitMode);SimulationLoop
 
 end
