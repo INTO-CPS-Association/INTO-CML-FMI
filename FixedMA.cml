@@ -1,0 +1,106 @@
+process FixedMA = ids_ : set of token, maInit: MAInit @
+begin
+
+types
+	out_val_int = map valueReference to svValue
+		
+state
+	de_fmu_level : real := 0.0
+	de_fmu_valRef_set : valueReference := 2
+	de_fmu_valRef_get : valueReference := 1
+	de_fmu_valve : bool := false
+	CCP : real := 0.0
+	ids : set of token := ids_
+	output_values : map fmi2Component to out_val_int := { id |-> {|->} | id in set ids_ }
+	stepSize : StepSizeT := maInit.#1
+	endTime : EndTimeT := maInit.#2
+
+operations
+	update_out_val: fmi2Component * valueReference * svValue ==> ()
+	update_out_val(fmu,vRef,v) == 
+	(
+		let old_out : out_val_int = output_values(fmu),
+			new_out : out_val_int = old_out ++ {vRef |-> v}
+		in
+			output_values := output_values ++ {fmu |-> new_out}
+	)
+	
+	get_out_val : ConVar ==> svValue
+	get_out_val(cVar) == return output_values(cVar.fmu)(cVar.vRef)
+
+actions
+	get_outputs = 
+		for all output in set {x | x in set dom Setup.connections} do
+			let scalar = getScalar(output) in								
+				cases scalar.type:
+					<real> -> get_output_real((output.fmu), (output.vRef)),
+					<boolean> -> get_output_boolean((output.fmu), (output.vRef)),
+					<integer> -> get_output_integer((output.fmu), (output.vRef))
+				end
+	
+	get_output_boolean = comp_ : fmi2Component, v : valueReference @ 
+		fmi2GetBoolean ! comp_ ! v -> 
+			fmi2GetBooleanReturn ? value ? status -> 
+				update_out_val(comp_,v,value)
+		
+	get_output_integer = comp_ : fmi2Component, v : valueReference @ 
+		fmi2GetInteger ! comp_ ! v -> 
+			fmi2GetIntegerReturn ? value ? status -> 
+				update_out_val(comp_,v,value)
+		
+	get_output_real = fmu : fmi2Component, vRef : valueReference @
+		fmi2GetReal ! fmu ! vRef -> 
+			fmi2GetRealReturn ? value ? status -> 
+				update_out_val(fmu, vRef, value)	
+			
+	set_inputs = 
+		for all output in set {x | x in set dom Setup.connections} do
+			for all cVar in set {x | x in set Setup.connections(output)} do
+				-- This only returns a set with 1 value, but it is not possible to define.
+				-- This gives us the scalar we need to set
+				let scalar = getScalar(cVar),
+					v = get_out_val(output) 
+				in
+					cases scalar.type:
+						<real> -> set_input_real((cVar.fmu), (cVar.vRef), (v)),
+						<boolean> -> set_input_boolean((cVar.fmu), (cVar.vRef), (v)),
+						<integer> -> set_input_integer((cVar.fmu), (cVar.vRef), (v))
+					end		
+	
+	set_input_real = comp_ : fmi2Component, vRef : valueReference, v : real @ 
+		fmi2SetReal ! comp_ ! vRef ! v -> set_input_status
+	set_input_boolean = comp_ : fmi2Component, vRef : valueReference, v : bool @ 
+		fmi2SetBoolean ! comp_ ! vRef ! v -> set_input_status	
+	set_input_integer = comp_ : fmi2Component, vRef : valueReference, v : int @
+		fmi2SetInteger ! comp_ ! vRef ! v -> set_input_status	
+	
+	set_input_status = fmi2StatusReturn ? s -> Skip
+	
+	dostep = 
+		for all id in set ids do
+			fmi2DoStep ! id ! CCP ! stepSize -> doStepStatus
+		
+	doStepStatus = fmi2StatusReturn ? st -> Skip
+	
+	terminate = for all id in set ids do
+		(
+			fmi2Terminate ! id -> Skip
+		)
+	instantiate = for all id in set ids do
+		fmi2Instantiate ! id -> Skip
+		
+	cycle = 
+		if CCP + stepSize <= endTime 
+		then 
+		(
+			get_outputs; 
+			set_inputs; 
+			dostep;
+			CCP:=CCP+stepSize;
+			cycle
+		) 
+		else terminate
+	
+	@ instantiate; cycle
+
+end

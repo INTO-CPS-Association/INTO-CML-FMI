@@ -1,10 +1,19 @@
 chansets	
-	all_chansets = {|fmi2SetReal|} union
-		{|fmi2GetBoolean|} union 
-		{|fmi2DoStep|} union 
-		{|fmi2SetupExperiment|} union 
-		{|fmi2EnterInitializationMode|} union
-		{|fmi2ExitInitializatoinMode|} union
-		{|fmi2Terminate|} union
-		{|fmi2GetBooleanReturn|} union
-		{|fmi2StatusReturn|}
+	fmi_chansets = 
+	{|
+		fmi2SetReal, 
+		fmi2GetReal, 
+		fmi2GetRealReturn, 
+		fmi2SetBoolean, 
+		fmi2GetBoolean, 
+		fmi2GetBooleanReturn, 
+		fmi2DoStep, 
+		fmi2Instantiate,
+		fmi2SetupExperiment,
+		fmi2EnterInitializationMode,
+		fmi2ExitInitializationMode,
+		fmi2Terminate,
+		fmi2GetBooleanReturn,
+		fmi2GetRealReturn,
+		fmi2StatusReturn
+	|}

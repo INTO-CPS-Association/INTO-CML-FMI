@@ -1,0 +1,25 @@
+functions
+	public getOutputs: set of ScalarVariable -> set of ScalarVariable
+	getOutputs(s) == getSVCausality(s, <output>)
+	
+	public getInputs: set of ScalarVariable -> set of ScalarVariable
+	getInputs(s) == getSVCausality(s, <input>)
+	
+	-- This only ever returns 1, but it is not possible to define.
+	public getScalar: ConVar -> ScalarVariable
+	getScalar(cv) ==  iota y in set Setup.MDS(cv.fmu) @ y.vRef = cv.vRef
+	pre card {x | x in set Setup.MDS(cv.fmu) @ x.vRef = cv.vRef} = 1
+	
+	-- Alternative implementation of getScalar
+--    getScalar(cVar: ConVar) sv : ScalarVariable
+--     post sv in set {x | x in set MDS(cVar.fmu) @ x.vRef = cVar.vRef}
+	
+	-- Hack to get a single ScalarVariable
+--	 getScalar(MDS : ModelDescriptions, cVar: ConVar) sv : ScalarVariable
+--	 post sv in set {x | x in set MDS(cVar.fmu) @ x.vRef = cVar.vRef}
+	 
+
+
+
+	public getSVCausality : set of ScalarVariable * SVCausality -> set of ScalarVariable
+	getSVCausality(svs, causality) == {x | x in set svs @ x.causality = causality}

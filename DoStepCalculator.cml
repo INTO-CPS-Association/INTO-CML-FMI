@@ -1,67 +1,74 @@
+-- The DoStepCalculator (DSC) keeps track of how much time has passed. 
+-- Can be used by FMUs to keep track of time.
+-- Example: If the DSC is initialized with a periodLength of 0.5,
+-- and CalcDoSteps is invoked with 0.0 and 0.3, then it will return 0, as no steps should be performed. 
+-- The internal "tillNextPeriod" will be 0.2. 
+-- Upon next invocation of CalcDoSteps with 0.3, 0.3 it will return 1, as 1 step should be performed.
+-- The internal "tillNextPeriod" will be updated to 0.4
+-- CalcDoSteps can also return x>1, if the step size amounts to several dosteps.
 class DoStepCalculator = 
 begin
 
 state 
-currentCommunicationPoint : real := 0
-periodLength : real
-tillNextPeriod : real
+	currentCommunicationPoint : real := 0
+	periodLength : real
+	tillNextPeriod : real
 
 operations
-
-public DoStepCalculator: real ==> DoStepCalculator
-DoStepCalculator(periodLength_) ==
-(
-	periodLength := periodLength_;
-	tillNextPeriod := periodLength_
-)
-
-public CalcDoSteps: real * real ==> int
-CalcDoSteps(ccp, ss) == 
-(
-	let newCcp = ccp + ss,
-		diff = newCcp - currentCommunicationPoint
-	in
-	(	
-		currentCommunicationPoint := newCcp;
-		// At least 1 step
-		if diff >= tillNextPeriod
-		then 
-			let 
-				doStepTuple = CalcMultipleDoSteps(diff, tillNextPeriod, periodLength)
-			in 
-			(	
-				tillNextPeriod := doStepTuple.#2;
-				return doStepTuple.#1
-			)
-		// No step, but still progress.
-		else
-			(tillNextPeriod := tillNextPeriod - diff;
-			return 0)
-	)			
-)
-pre canBeInvoked(currentCommunicationPoint, ccp)
-
-
-public canBeInvokedExt: real ==> bool
-canBeInvokedExt(ccp) == canBeInvoked(currentCommunicationPoint, ccp)
+	public DoStepCalculator: real ==> DoStepCalculator
+	DoStepCalculator(periodLength_) ==
+	(
+		periodLength := periodLength_;
+		tillNextPeriod := periodLength_
+	)
 	
-public getCCP: () ==> real 
-getCCP() == return currentCommunicationPoint
+	public calcDoSteps: real * real ==> int
+	calcDoSteps(ccp, ss) == 
+	(
+		let newCcp = ccp + ss,
+			diff = newCcp - currentCommunicationPoint
+		in
+		(	
+			currentCommunicationPoint := newCcp;
+			// At least 1 step
+			if diff >= tillNextPeriod
+			then 
+				let 
+					doStepTuple = CalcMultipleDoSteps(diff, tillNextPeriod, periodLength)
+				in 
+				(	
+					tillNextPeriod := doStepTuple.#2;
+					return doStepTuple.#1
+				)
+			// No step, but still progress.
+			else
+				(tillNextPeriod := tillNextPeriod - diff;
+				return 0)
+		)			
+	)
+	pre canBeInvoked(currentCommunicationPoint, ccp)
+	
+	-- Verifies the ccp argument is in sync with the state variable
+	public isCcpValid: real ==> bool
+	isCcpValid(ccp) == canBeInvoked(currentCommunicationPoint, ccp)
+		
+	public getCCP: () ==> real 
+	getCCP() == return currentCommunicationPoint
 
 functions
-private canBeInvoked : real * real -> bool
-	canBeInvoked(ccp, ccp') == ccp' >= ccp
-	
-private 
-	CalcMultipleDoSteps : real * real * real -> (int * real)
-	CalcMultipleDoSteps(timeIncrease, tillNextPeriod, periodLength) == 
-		let remTimeAfterFirstPeriod = timeIncrease - tillNextPeriod,
-			doStepsReal = remTimeAfterFirstPeriod / periodLength,
-			doStepsFloored = floor(doStepsReal)
-		in
-			mk_(
-				doStepsFloored+1, 
-				periodLength - (doStepsReal - doStepsFloored)
-			)
+	private canBeInvoked : real * real -> bool
+		canBeInvoked(ccp, ccp') == ccp' >= ccp
+		
+	private 
+		CalcMultipleDoSteps : real * real * real -> (int * real)
+		CalcMultipleDoSteps(timeIncrease, tillNextPeriod, periodLength) == 
+			let remTimeAfterFirstPeriod = timeIncrease - tillNextPeriod,
+				doStepsReal = remTimeAfterFirstPeriod / periodLength,
+				doStepsFloored = floor(doStepsReal)
+			in
+				mk_(
+					doStepsFloored+1, 
+					periodLength - (doStepsReal - doStepsFloored)
+				)
 			
 end

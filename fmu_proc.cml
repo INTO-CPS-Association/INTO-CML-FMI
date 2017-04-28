@@ -1,41 +1,102 @@
-process fmu_proc = id_ : token @
+process FMU_Proc = id_ : token @
 begin
+types
+
 values 
 
 state
-	fmu : [FMUInterface] := nil
+	fmu : [AFMU] := nil
 	id : token := id_
+	io : [IO] := nil
 	
 actions
+-- NOTE: Pattern matching tuples does not work
+
+	ReturnStatus = s : fmi2Status @ fmi2StatusReturn ! s -> Skip
+
 	INIT = 
 	(
-		dcl x : Instantiator @ x := new Instantiator();
-		fmu := x.instantiate(id)
+		dcl x : Instantiator @ 
+		x := new Instantiator();
+		fmu := x.instantiate(id);
+		io := new IO()
 	)
+	
+	Instantiate = fmi2Instantiate ! id -> 
+	(
+		dcl x : Instantiator @ 
+		x := new Instantiator();
+		fmu := x.instantiate(id);
+		io := new IO()
+	)
+	
+	EnterInitMode = fmi2EnterInitializationMode ! id -> 
+		let s = fmu.EnterInitializationMode() in 
+			ReturnStatus(s)
+	
+	ExitInitMode = fmi2ExitInitializationMode ! id -> 
+		let s = fmu.ExitInitializationMode() in
+			ReturnStatus(s)
+	
 	SetReal = 
 		fmi2SetReal ! id ? x ? y -> 
 		(
-			dcl ret : fmi2Status @ ret := fmu.setInputReal(x,y);
-			fmi2StatusReturn!ret -> Skip
+			io.echo("### fmu_proc SetReal ###");
+			let s = fmu.setInputReal(x,y) in
+			(
+				io.echo("### fmu_proc SetReal1 ###");
+				ReturnStatus(s)
+			)
 		)
 		
 	GetBoolean = 
 		fmi2GetBoolean ! id ? x ->
 		(
-			dcl ret : booleanReturn @ ret := fmu.getBoolean(x);
-			fmi2GetBooleanReturn ! (ret.#1) ! (ret.#2) -> Skip
+		io.echo("### fmu_proc GetBoolean0 ###");
+			let r : booleanReturn = fmu.getBoolean(x) in
+			(
+				io.echo("### fmu_proc GetBoolean1 ###");
+				fmi2GetBooleanReturn ! (r.#1) ! (r.#2) -> Skip
+			)
+		)
+		
+	SetBoolean = 
+		fmi2SetBoolean ! id ? x ? y->
+		(
+		io.echo("### fmu_proc SetBoolean0 ###");
+			let s : fmi2Status = fmu.setInputBoolean(x,y) in
+			(
+				io.echo("### fmu_proc SetBoolean1 ###");
+				ReturnStatus(s)
+			)
+		)
+		
+	GetReal = 
+		fmi2GetReal ! id ? x ->
+		(
+			io.echo("### fmu_proc GetReal0 ###");
+			let r : realReturn = fmu.getReal(x) in
+			(
+				io.echo("### fmu_proc GetReal1 ###");
+				fmi2GetRealReturn ! (r.#1) ! (r.#2) -> Skip
+			)
 		)
 	DoStep = 
 		fmi2DoStep ! id ? ccp ? ss ->
 		(
-			dcl ret : fmi2Status @ ret := fmu.doStep(ccp, ss);
-			fmi2StatusReturn ! ret -> Skip
+			let s : fmi2Status = fmu.doStep(ccp, ss) in
+			(
+				ReturnStatus(s)
+			)
 		)
 
 	Terminate = fmi2Terminate ! id -> Skip
 	
-	SimulationLoop = (GetBoolean;SimulationLoop) [] (SetReal;SimulationLoop) [] (DoStep;SimulationLoop) [] (Terminate;Skip)
+	SimulationLoop = 
 	
-@ INIT; SimulationLoop
+	(SetBoolean [] GetBoolean [] GetReal [] SetReal [] DoStep);SimulationLoop [] (Terminate;Skip)
+	--(SetBoolean;SimulationLoop) [] (GetBoolean;SimulationLoop) [] (GetReal;SimulationLoop) [] (SetReal;SimulationLoop) [] (DoStep;SimulationLoop) [] (Terminate;Skip)
+	
+@ Instantiate; SimulationLoop
 
 end

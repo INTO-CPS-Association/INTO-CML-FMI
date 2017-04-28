@@ -1,0 +1,56 @@
+process FMI = 
+	FixedMA({Setup.fmu1,Setup.fmu2},mk_(Setup.stepSize,Setup.endTime)) [|fmi_chansets|] 
+	(
+		FMU_Proc(Setup.fmu1) ||| 
+		FMU_Proc(Setup.fmu2)
+	)
+
+
+class Setup =
+begin 
+
+values
+	fmu1 : fmi2Component = mk_token("de")
+	fmu2 : fmi2Component = mk_token("ct")
+	stepSize: StepSizeT = 0.5
+	endTime: EndTimeT = 1.0
+
+	
+	connections : map ConVar to set of ConVar = 
+		{ 
+			mk_ConVar(fmu1, 1) |-> {mk_ConVar(fmu2, 1)},
+			mk_ConVar(fmu2, 2) |-> {mk_ConVar(fmu1, 2)}
+		}
+		
+	MDS : ModelDescriptions =
+		{
+			fmu1 |-> {
+					mk_ScalarVariable(<output>,<boolean>,1),
+					mk_ScalarVariable(<input>,<real>,2)
+				},
+			fmu2 |-> {
+					mk_ScalarVariable(<input>,<boolean>,1), 
+					mk_ScalarVariable(<output>,<real>,2)
+					
+				}
+		}
+end
+
+class Instantiator = 
+begin
+
+operations
+	public instantiate : fmi2Component ==> AFMU
+	instantiate(t) == 
+	(
+		dcl x : AFMU @
+		(
+			cases t:
+			(Setup.fmu1) -> x:= new FMU_DE(),
+			(Setup.fmu2) -> x := new FMU_DE()
+			end
+		);
+		return x
+	)	
+
+end

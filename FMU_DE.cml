@@ -1,4 +1,4 @@
-class de extends FMUInterface = 
+class FMU_DE extends AFMU = 
 begin
 
 state
@@ -8,13 +8,16 @@ state
 	period : real := 0.5
 	minLevel : real := 1.0
 	maxLevel : real := 2.0
+	io : [IO] := nil
 
 operations
-	public de:() ==> de
-	de () == 
+	public FMU_DE:() ==> FMU_DE
+	FMU_DE () == 
 	(
+		io := new IO();
+		let x = io.echo("ct - getReal") in
 		doStepCalc := new DoStepCalculator(period)
-	)
+	)	
 	
 	public setInputReal: valueReference * real ==> fmi2Status
 	setInputReal(vRef,v) == 
@@ -37,10 +40,10 @@ operations
 	
 	public doStep : currentCommunicationPoint * communicationStepSize ==> fmi2Status
 	doStep(t, h) == 
-		if doStepCalc.canBeInvokedExt(t)
+		if doStepCalc.isCcpValid(t)
 		 then 
 		 (
-		 	let steps: int = doStepCalc.CalcDoSteps(t,h) in
+		 	let steps: int = doStepCalc.calcDoSteps(t,h) in
 		 	(
 		 		controlLogic(steps);
 			 	return <fmi2OK>
