@@ -19,8 +19,8 @@ actions
 		dcl x : Instantiator @ 
 		x := new Instantiator();
 		fmu := x.instantiate(id);
-		fmu.Instantiate();
-		ReturnStatus(<fmi2OK>)
+		let s = fmu.Instantiate() in
+			ReturnStatus(s)
 	)
 	
 	EnterInitMode = fmi2EnterInitializationMode ! id -> 
