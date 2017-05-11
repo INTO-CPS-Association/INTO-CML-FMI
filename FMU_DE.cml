@@ -2,22 +2,23 @@ class FMU_DE extends AFMU =
 begin
 
 state
-	level : real := 0.0
-	valve : bool := true
+	level : real := 1.5
+	valve : bool := false
 	doStepCalc : [DoStepCalculator] := nil 
 	period : real := 0.5
 	minLevel : real := 1.0
 	maxLevel : real := 2.0
-
-operations
-	public FMU_DE:() ==> FMU_DE
-	FMU_DE () == 
-	(
-		doStepCalc := new DoStepCalculator(period)
-	)	
 	
-	public setInputReal: valueReference * real ==> fmi2Status
-	setInputReal(vRef,v) == 
+operations
+	public FMU_DE: set of ScalarVariable ==> FMU_DE
+	FMU_DE (md) == 
+	(
+		MD :=md;
+		doStepCalc := new DoStepCalculator(period)
+	)
+	
+	public fmu_setInputReal: valueReference * real ==> fmi2Status
+	fmu_setInputReal(vRef,v) ==
 		if vRef = 2 
 		then 
 		(
@@ -27,8 +28,8 @@ operations
 		else 
 			return <fmi2Error>
 	
-	public getBoolean : valueReference ==> booleanReturn
-	getBoolean(vRef) == 			
+	protected fmu_getBoolean : valueReference ==> booleanReturn
+	fmu_getBoolean(vRef) == 			
 		if vRef = 1 
 		then 
 			return mk_(valve,<fmi2OK>)

@@ -17,9 +17,6 @@ functions
 	-- Hack to get a single ScalarVariable
 --	 getScalar(MDS : ModelDescriptions, cVar: ConVar) sv : ScalarVariable
 --	 post sv in set {x | x in set MDS(cVar.fmu) @ x.vRef = cVar.vRef}
-	 
-
-
 
 	public getSVCausality : set of ScalarVariable * SVCausality -> set of ScalarVariable
 	getSVCausality(svs, causality) == {x | x in set svs @ x.causality = causality}

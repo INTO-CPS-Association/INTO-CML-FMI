@@ -1,13 +1,13 @@
 channels
 
-fmi2StatusReturn : fmi2Status
+fmi2StatusReturn : fmi2Status -- Limitation of IDE
 
 fmi2SetReal : fmi2Component *  valueReference * real
 fmi2SetBoolean : fmi2Component * valueReference * bool
 fmi2SetInteger : fmi2Component * valueReference * int
 
 fmi2GetReal : fmi2Component * valueReference
-fmi2GetRealReturn : real * fmi2Status
+fmi2GetRealReturn : real * fmi2Status -- Limitation of IDE
 fmi2GetBoolean : fmi2Component * valueReference
 fmi2GetBooleanReturn : bool * fmi2Status
 fmi2GetInteger : fmi2Component * valueReference

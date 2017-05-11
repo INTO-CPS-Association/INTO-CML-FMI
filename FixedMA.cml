@@ -29,7 +29,7 @@ operations
 
 actions
 	get_outputs = 
-		for all output in set {x | x in set dom Setup.connections} do
+		for all output in set {x | x in set dom Setup`connections} do
 			let scalar = getScalar(output) in								
 				cases scalar.type:
 					<real> -> get_output_real((output.fmu), (output.vRef)),
@@ -40,21 +40,27 @@ actions
 	get_output_boolean = comp_ : fmi2Component, v : valueReference @ 
 		fmi2GetBoolean ! comp_ ! v -> 
 			fmi2GetBooleanReturn ? value ? status -> 
-				update_out_val(comp_,v,value)
+				(
+					checkErrorStatus(status);update_out_val(comp_,v,value)
+				)
 		
 	get_output_integer = comp_ : fmi2Component, v : valueReference @ 
 		fmi2GetInteger ! comp_ ! v -> 
 			fmi2GetIntegerReturn ? value ? status -> 
-				update_out_val(comp_,v,value)
+				(
+					checkErrorStatus(status);update_out_val(comp_,v,value)
+				)
 		
 	get_output_real = fmu : fmi2Component, vRef : valueReference @
 		fmi2GetReal ! fmu ! vRef -> 
 			fmi2GetRealReturn ? value ? status -> 
-				update_out_val(fmu, vRef, value)	
+			(
+				checkErrorStatus(status);update_out_val(fmu, vRef, value)
+			)	
 			
 	set_inputs = 
-		for all output in set {x | x in set dom Setup.connections} do
-			for all cVar in set {x | x in set Setup.connections(output)} do
+		for all output in set {x | x in set dom Setup`connections} do
+			for all cVar in set {x | x in set Setup`connections(output)} do
 				let scalar = getScalar(cVar),
 					v = get_out_val(output) 
 				in
@@ -73,7 +79,9 @@ actions
 	set_input_integer = comp_ : fmi2Component, vRef : valueReference, v : int @
 		fmi2SetInteger ! comp_ ! vRef ! v -> status_return	
 	
-	status_return = fmi2StatusReturn ? s -> Skip
+	status_return = fmi2StatusReturn ? s -> checkErrorStatus(s)
+	
+	checkErrorStatus = s:fmi2Status @ if s = <fmi2Error> then Stop else Skip
 	
 	dostep = 
 		for all id in set ids do
@@ -89,7 +97,7 @@ actions
 	initialize = for all id in set ids do
 	(
 		fmi2EnterInitializationMode ! id -> status_return;
-			fmi2ExitInitializationMode ! id -> status_return
+		fmi2ExitInitializationMode ! id -> status_return
 	)
 		
 	cycle = 

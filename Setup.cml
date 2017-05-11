@@ -1,9 +1,12 @@
 process FMI = 
-	FixedMA({Setup.fmu1,Setup.fmu2},mk_(Setup.stepSize,Setup.endTime)) [|fmi_chansets|] 
-	(
-		FMU_Proc(Setup.fmu1) ||| 
-		FMU_Proc(Setup.fmu2)
-	)
+	FixedMA(
+		{Setup`fmu1,Setup`fmu2},
+		mk_(Setup`stepSize,Setup`endTime)) 
+		[|fmi_chansets|] 
+		(
+			FMU_Proc(Setup`fmu1) ||| 
+			FMU_Proc(Setup`fmu2)
+		)
 
 
 class Setup =
@@ -25,14 +28,13 @@ values
 	MDS : ModelDescriptions =
 		{
 			fmu1 |-> {
-					mk_ScalarVariable(<output>,<boolean>,1),
-					mk_ScalarVariable(<input>,<real>,2)
-				},
+				mk_ScalarVariable(<output>,<boolean>,1),
+				mk_ScalarVariable(<input>,<real>,2)
+			},
 			fmu2 |-> {
-					mk_ScalarVariable(<input>,<boolean>,1), 
-					mk_ScalarVariable(<output>,<real>,2)
-					
-				}
+				mk_ScalarVariable(<input>,<boolean>,1), 
+				mk_ScalarVariable(<output>,<real>,2)
+			}
 		}
 end
 
@@ -42,15 +44,13 @@ begin
 operations
 	public instantiate : fmi2Component ==> AFMU
 	instantiate(t) == 
-	(
+	(		
 		dcl x : AFMU @
-		(
 			cases t:
-			(Setup.fmu1) -> x:= new FMU_DE(),
-			(Setup.fmu2) -> x := new FMU_DE()
-			end
-		);
-		return x
+			(Setup`fmu1) -> x:= new FMU_DE(Setup`MDS(Setup`fmu1)),
+			(Setup`fmu2) -> x := new FMU_CT(Setup`MDS(Setup`fmu2))
+			end;
+			return x
 	)	
 
 end

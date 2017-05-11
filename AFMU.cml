@@ -6,6 +6,8 @@ types
 
 state
 	protected fmuState : [FMIState] := nil
+	// This variable will be set by the constructor of the class implementing AFMU
+	protected MD : set of ScalarVariable := {}
 
 
 operations	
@@ -15,7 +17,7 @@ operations
 	public Instantiate : () ==> fmi2Status
 	Instantiate() == 
 	(
-		if(fmuState = nil)
+		if fmuState = nil
 		then
 		(
 			fmuState := <Instantiated>; 
@@ -32,6 +34,7 @@ operations
 		else return <fmi2Error>
 	)
 	
+	
 	public ExitInitializationMode : () ==> fmi2Status
 	ExitInitializationMode() == 
 	(
@@ -40,25 +43,79 @@ operations
 		else return <fmi2Error>
 	)
 	
-	public setInputBoolean: valueReference * bool ==> fmi2Status
-	setInputBoolean(vRef,v) == return <fmi2Error>
+	--	Improvement: Pass a function to this operation. 
+	--	This requires convreting the setInputXXX operations to functions.
+	private valRefOk: SVCausality * valueReference * SVType ==> bool
+	valRefOk(cau, vRef, t) == return exists v in set MD @ v.causality = cau and v.type = t and v.vRef = vRef
 	
-	public setInputReal: valueReference * real ==> fmi2Status
-	setInputReal(vRef,v) == return <fmi2Error>
+	public setInput: valueReference * svValue * SVType ==> fmi2Status
+	setInput(vRef, v, t) ==
+	if valRefOk(<input>, vRef, t)
+		then
+			cases t:
+			<boolean> -> return fmu_setInputBoolean(vRef,v),
+			<integer> -> return fmu_setInputInteger(vRef,v),
+			<real> -> return fmu_setInputReal(vRef, v),
+			others -> return <fmi2Error>
+			end
+	else
+		return <fmi2Error>
+		
+--	public setInputBoolean: valueReference * bool ==> fmi2Status
+--	setInputBoolean(vRef, v) == 
+--		if valRefOk(vRef,<boolean>) then return fmu_setInputBoolean(vRef,v) else return <fmi2Error>		
+		
+	protected fmu_setInputBoolean: valueReference * bool ==> fmi2Status
+	fmu_setInputBoolean(vRef,v) == return <fmi2Error>
 	
-	public setInputInteger: valueReference * int ==> fmi2Status
-	setInputInteger(vRef,v) == return <fmi2Error>
+--	public setInputReal: valueReference * real ==> fmi2Status
+--	setInputReal(vRef, v) == 
+--		if valRefOk(vRef,<real>) then return fmu_setInputReal(vRef,v) else return <fmi2Error>
+	
+	protected fmu_setInputReal: valueReference * real ==> fmi2Status
+	fmu_setInputReal(vRef,v) == return <fmi2Error>
+	
+--	public setInputInteger: valueReference * real ==> fmi2Status
+--	setInputInteger(vRef, v) == 
+--	if valRefOk(vRef,<integer>) then return fmu_setInputInteger(vRef,v) else return <fmi2Error>
+	
+	protected fmu_setInputInteger: valueReference * int ==> fmi2Status
+	fmu_setInputInteger(vRef,v) == return <fmi2Error>
 
-	public getReal : valueReference ==> (real * fmi2Status)
-	getReal(vRef) == return mk_(0.0, <fmi2Error>)
+	public getOutput : valueReference * SVType ==> (svValue * fmi2Status)
+	getOutput(vRef, t) == 
+	( 
+		if valRefOk(<output>, vRef, t)
+		then
+			cases t:
+			<boolean> -> return fmu_getBoolean(vRef),
+			<integer> -> return fmu_getInteger(vRef),
+			<real> -> return fmu_getReal(vRef),
+			others -> return mk_(getDefaultValue(t), <fmi2Error>)
+			end
+		else
+			return mk_(getDefaultValue(t), <fmi2Error>)
+	)
+
+	protected fmu_getReal : valueReference ==> (real * fmi2Status)
+	fmu_getReal(vRef) == return mk_(0.0, <fmi2Error>)
 	
-	public getBoolean : valueReference ==> booleanReturn
-	getBoolean(vRef) == return mk_(false, <fmi2Error>)
+	protected fmu_getBoolean : valueReference ==> booleanReturn
+	fmu_getBoolean(vRef) == return mk_(false, <fmi2Error>)
 	
-	public getInteger : valueReference ==> (int * fmi2Status)
-	getInteger(vRef) == return mk_(0, <fmi2Error>)
+	protected fmu_getInteger : valueReference ==> (int * fmi2Status)
+	fmu_getInteger(vRef) == return mk_(0, <fmi2Error>)
 	
 	public doStep : currentCommunicationPoint * communicationStepSize ==> fmi2Status
 	doStep(t, h) == return <fmi2Error>
+	
+functions
+	getDefaultValue: SVType -> svValue
+	getDefaultValue(t) ==
+		cases t:
+			<boolean> -> false,
+			<integer> -> 0,
+			<real> -> 0.0
+		end
 
 end

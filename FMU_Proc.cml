@@ -13,12 +13,13 @@ actions
 	-- NOTE: Pattern matching tuples does not work
 
 	ReturnStatus = s : fmi2Status @ fmi2StatusReturn ! s -> Skip
-	
+
 	Instantiate = fmi2Instantiate ! id -> 
 	(
 		dcl x : Instantiator @ 
 		x := new Instantiator();
 		fmu := x.instantiate(id);
+		fmu.Instantiate();
 		ReturnStatus(<fmi2OK>)
 	)
 	
@@ -29,37 +30,26 @@ actions
 	ExitInitMode = fmi2ExitInitializationMode ! id -> 
 		let s = fmu.ExitInitializationMode() in
 			ReturnStatus(s)
-	
-	SetReal = 
-		fmi2SetReal ! id ? x ? y -> 
-		(
-			let s = fmu.setInputReal(x,y) in
-			(
-				ReturnStatus(s)
-			)
-		)
-		
-	GetBoolean = 
-		fmi2GetBoolean ! id ? x ->
-		(
-			let r : booleanReturn = fmu.getBoolean(x) in
-			(
-				fmi2GetBooleanReturn ! (r.#1) ! (r.#2) -> Skip
-			)
-		)
-		
-	SetBoolean = 
-		fmi2SetBoolean ! id ? x ? y ->		
-			let s : fmi2Status = fmu.setInputBoolean(x,y) in			
-				ReturnStatus(s)
-			
-		
 		
 	GetReal = 
 		fmi2GetReal ! id ? x ->		
-			let r : realReturn = fmu.getReal(x) in			
+			let r : realReturn = fmu.getOutput(x,<real>) in			
 				fmi2GetRealReturn ! (r.#1) ! (r.#2) -> Skip
-			
+		
+	GetBoolean = 
+		fmi2GetBoolean ! id ? x ->
+			let r : booleanReturn = fmu.getOutput(x,<boolean>) in
+				fmi2GetBooleanReturn ! (r.#1) ! (r.#2) -> Skip
+	
+	GenericSet = vRef : valueReference, v: svValue, t: SVType @
+		let s = fmu.setInput(vRef,v,t) in	ReturnStatus(s)		
+	
+	SetBoolean = fmi2SetBoolean ! id ? x ? y -> GenericSet(x,y,<boolean>)
+	
+	SetReal = fmi2SetReal ! id ? x ? y -> GenericSet(x,y,<real>)
+	
+	SetInteger = 
+		fmi2SetInteger ! id ? x ? y -> GenericSet(x,y,<integer>)
 		
 	DoStep = 
 		fmi2DoStep ! id ? ccp ? ss ->		

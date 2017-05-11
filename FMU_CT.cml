@@ -2,20 +2,21 @@ class FMU_CT extends AFMU =
 begin
 
 state
+	level : real := 1.5
 	valveControl : bool := false
-	level : real := 0.0
 	doStepCalc : [DoStepCalculator] := nil 
-	period : real := 0.5
-
+	period : real := 0.5		
+	
 operations
-	public FMU_CT:() ==> FMU_CT
-	FMU_CT() == 
+	public FMU_CT: set of ScalarVariable ==> FMU_CT
+	FMU_CT(md) == 
 	(
-		doStepCalc := new DoStepCalculator(period)
+		MD := md;
+		doStepCalc := new DoStepCalculator(period)		
 	)
 	
-	public setInputBoolean: valueReference * bool ==> fmi2Status
-	setInputBoolean(vRef,v) == 
+	protected fmu_setInputBoolean: valueReference * bool ==> fmi2Status
+	fmu_setInputBoolean(vRef,v) == 
 		if vRef = 1 
 		then 
 		(
@@ -24,25 +25,21 @@ operations
 		) 
 		else return <fmi2Error>
 	
-	public getReal : valueReference ==> realReturn
-	getReal(vRef) == 
+	protected fmu_getReal : valueReference ==> realReturn
+	fmu_getReal(vRef) == 
 			if vRef = 2 
 			then return mk_(level,<fmi2OK>)			
-			else return mk_(level,<fmi2Error>)
-			
-		
+			else return mk_(level,<fmi2Error>)		
 	
 	public doStep : currentCommunicationPoint * communicationStepSize ==> fmi2Status
 	doStep(t, h) == 
 		if doStepCalc.isCcpValid(t)
 		 then 
-		 (
 		 	let steps: int = doStepCalc.calcDoSteps(t,h) in
 		 	(
 		 		controlLogic(steps);
 			 	return <fmi2OK>
 		 	)
-		 )
 		 else return <fmi2Error>
 	
 	private controlLogic: int ==> ()
